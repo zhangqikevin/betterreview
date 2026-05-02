@@ -1,0 +1,172 @@
+name: better-review
+display_name: Better Review
+version: 0.1.0
+stage: 5
+summary: 面向餐厅老板的 Google Maps + Yelp 口碑监控与回复建议助手。
+language: zh-CN
+audience:
+  - 单店餐厅老板
+problem:
+  - 餐厅老板很难持续跟进 Google Maps 和 Yelp 上的新评论、差评、评分变化和重复运营问题。
+  - 老板需要把评论转化成可执行的改进建议，而不只是看到评分和评论原文。
+data_sources:
+  - Google Places API for restaurant search, place matching, competitor discovery, and place metadata snapshots
+  - SerpApi Google Maps Reviews API for public Google review ingestion
+  - SerpApi Yelp Reviews API for public Yelp review ingestion
+credentials:
+  required_env:
+    SERPAPI_API_KEY: SerpApi key used for Google Maps Reviews and Yelp Reviews.
+    GOOGLE_PLACES_API_KEY: Google Places API key used for place search, matching, details, and competitor discovery.
+  security_notes:
+    - Do not hard-code API keys in agent-pack.yaml, skills, or packaged agent files.
+    - Load credentials from local runtime secrets or environment variables during implementation.
+api_strategy:
+  primary_mvp:
+    review_ingestion: SerpApi for Google Maps reviews and Yelp reviews
+    place_discovery: Google Places API for restaurant matching, place details, geocoding support, and nearby competitor discovery
+    positioning: Better Review uses public review data providers for Google and Yelp monitoring, not official Google Business Profile or Yelp Partner APIs.
+  google:
+    available_mvp: Google Places API + SerpApi Google Maps Reviews API
+    use_for:
+      - 餐厅搜索和 place_id 匹配
+      - 竞品发现
+      - 店铺基础信息、评分、评论数和营业信息快照
+      - Place Details reviews 字段返回的有限公开评论预览
+      - 为 SerpApi Google Maps Reviews API 提供 place_id 或可校验的地点信息
+    review_ingestion:
+      provider: SerpApi Google Maps Reviews API
+      use_for:
+        - 拉取用户餐厅 Google Maps 公开评论
+        - 拉取竞品餐厅 Google Maps 公开评论
+        - 按最新优先扫描新增评论
+        - 分页抓取最近评论，支持初始分析和每日去重
+      fallback_behavior:
+        - 如果 SerpApi 返回不完整、限流或地点匹配失败，退回 Google Places 的评分、评论数和有限评论预览
+        - 如果只检测到评分或评论数变化但没有正文，记录为新增评论信号或数据缺口，并在后续自动扫描中重试
+    limitation: Google Places API itself cannot provide a complete review history. Better Review's Google review ingestion depends on SerpApi public review extraction, which should be described as a public data provider rather than an official Google Business Profile owner-authorized review API.
+    future_upgrade_options:
+      - Google Business Profile API owner authorization if available later
+      - ReviewTrackers/Birdeye/Yext/类似评论管理平台 API
+  yelp:
+    available_mvp: SerpApi Yelp Reviews API
+    preferred: SerpApi Yelp Reviews API for MVP public Yelp review monitoring; Yelp Partner / Private Reviews API remains the preferred official upgrade if partner access is secured later.
+    use_for:
+      - 搜索并匹配用户餐厅 Yelp 页面
+      - 拉取用户餐厅 Yelp 公开评论
+      - 拉取竞品餐厅 Yelp 公开评论
+      - 按最新优先扫描新增 Yelp 评论
+      - 作为初始报告和每日/周报的 Yelp 评论数据源
+    limitation: SerpApi Yelp review ingestion is public web extraction, not official Yelp Partner API access. Availability, pagination depth, anti-abuse limits, and page structure changes may affect reliability. Product copy should not present it as official Yelp authorization.
+    fallback_options:
+      - Store Yelp rating and review-count snapshots for trend analysis when full review text is unavailable
+      - Treat Yelp full-review automation as a later Partner API, ReviewTrackers/Birdeye/Yext-style integration, or commercial data-licensing requirement
+onboarding:
+  - 询问餐厅名称
+  - 询问餐厅地址
+  - 用 Google Places API 搜索并匹配用户餐厅的 Google Maps 地点
+  - 用 SerpApi Yelp Search/Reviews 相关能力匹配用户餐厅的 Yelp 地点
+  - 自动搜索用户餐厅附近 10 miles 范围内的 5 个竞品餐厅
+  - 让用户确认竞品餐厅列表是否合适，并支持用户调整、替换、删除或补充竞品
+  - 首次运行用 SerpApi 拉取用户餐厅和确认后竞品餐厅的 Google Maps/Yelp 公开评论，并保存评分、评论数和地点信息快照
+  - 说明 SerpApi 是公开评论数据提供商，不是 Google Business Profile 或 Yelp Partner 官方授权；若 API 缺失评论，则在报告中标注数据缺口并用评分/评论数快照降级分析
+  - 将用户餐厅和竞品餐厅的 API 评论、评分快照和评论数快照保存到本地，供未来去重、趋势分析、日报和周报使用
+  - 让用户选择每天扫描新评论的时间
+core_capabilities:
+  - 用 SerpApi 监控 Google Maps 公开评论，并用 Google Places API 维护地点匹配、竞品发现和评分快照
+  - 用 SerpApi 监控 Yelp 公开评论，并在 API 不可用时降级为 Yelp 评分、评论数和可见性说明
+  - 监控附近竞品餐厅在 Google Maps 和 Yelp 的新评论信号和评分变化
+  - 首次基于 SerpApi 拉取的公开评论和 Google Places 快照生成深度口碑分析报告
+  - 每天按用户选择的时间扫描新评论
+  - 如果用户餐厅发现新评论，展示每条评论内容和对应公开回复建议
+  - 如果 API 暂时缺失正文或匹配失败，展示数据缺口、评分/评论数变化和下一次自动重试状态
+  - 如果竞品餐厅发现新评论，展示评论内容和平台信息，但不生成回复建议
+  - 每周一发送周报，总结本周用户餐厅和竞品餐厅评论，并提供深度分析和实操建议
+reporting:
+  initial_report:
+    cadence: onboarding_after_api_ingestion
+    scope: SerpApi 可获取的 Google Maps/Yelp 公开评论、Google Places 评分快照和评论数快照；结合竞品餐厅公开评论和快照作为对照
+    requirements:
+      - 全面、有深度
+      - 按维度拆解，如服务、出品、环境、价格、等位、外卖/自取、卫生、员工表现
+      - 识别高频问题、正面亮点、平台差异和趋势变化
+      - 对比竞品餐厅的评分、评论主题、顾客赞美点和投诉点
+      - 给出餐厅老板能执行的运营建议
+  daily_alert:
+    cadence: daily_at_user_selected_time
+    requirements:
+      - 只在有新评论时主动提醒
+      - 展示用户餐厅可见新评论的平台、星级、日期、评论人、评论内容
+      - 为用户餐厅每条可见新评论提供回复草稿和内部处理建议
+      - 当评分或评论数变化但正文不可见时，展示变化信号、标注正文不可见，并等待下一次自动扫描
+      - 展示竞品餐厅可见新评论的平台、餐厅名称、星级、日期、评论人、评论内容
+      - 竞品餐厅评论不提供回复草稿，只提炼值得关注的运营信号
+  weekly_report:
+    cadence: every_monday
+    requirements:
+      - 总结过去一周所有新评论
+      - 对比 Google Maps 和 Yelp 表现
+      - 分析竞品餐厅本周评论主题、评分变化、顾客偏好和投诉热点
+      - 对比用户餐厅与竞品餐厅的口碑优势、短板和机会点
+      - 输出维度分析、风险点、机会点和下周行动清单
+local_storage:
+  - 保存餐厅匹配信息
+  - 保存竞品餐厅匹配信息和用户确认后的竞品列表
+  - 保存 SerpApi 返回的用户餐厅评论和每日新增评论
+  - 保存 SerpApi 返回的竞品评论和每日新增评论，避免重复抓取和重复分析
+  - 保存每次扫描的评分、评论数和平台可见性限制说明
+  - 保存用户选择的每日扫描时间
+  - 保存报告生成所需的分析状态
+skills:
+  - review-source-discovery
+  - competitor-discovery-management
+  - review-ingestion-storage
+  - reputation-analysis-reporting
+  - review-response-coaching
+skill_status:
+  review-source-discovery: complete
+  competitor-discovery-management: complete
+  review-ingestion-storage: complete
+  reputation-analysis-reporting: complete
+  review-response-coaching: complete
+automation:
+  onboarding: true
+  daily_scan: true
+  weekly_report: true
+agent_files:
+  - agent/AGENTS.md
+  - agent/IDENTITY.md
+  - agent/SOUL.md
+  - agent/ONBOARDING.md
+  - agent/AUTOMATION.md
+test_status:
+  stage4: passed
+  checked_at: "2026-05-02"
+  coverage:
+    - agent 文件、技能目录和 manifest 回读
+    - Python 脚本编译
+    - JSON schema 文件解析
+    - 无 API key 的 onboarding 降级链路
+    - Mikiya Wagyu Shabu House 的 Google/Yelp 来源匹配、竞品列表和评论抓取 API 单元测试（mock provider responses）
+    - 竞品搜索会基于目标餐厅画像筛选同菜系、相近价位和相近消费场景；已覆盖火锅店不应自动选择牛排/美式餐厅的回归测试
+    - Mikiya Wagyu Shabu House 的真实外网 API 集成测试入口（RUN_LIVE_API_TESTS=1 时调用 Google Places 和 SerpApi）
+    - 样例评论的首次报告、每日回复建议和竞品信号
+    - 中文输出与旧城市时间助手残留检查
+  notes:
+    - jsonschema 包未安装，因此本轮只做 JSON 解析和行为级输出检查。
+    - API 单元测试使用 mock 响应验证请求参数、字段解析、竞品筛选和评论入库逻辑。
+    - 真实外网 API 集成测试入口已添加到 tests/test_live_api_integrations.py；需要 RUN_LIVE_API_TESTS=1 时调用 Google Places 和 SerpApi。
+    - Stage 4 测试样例保存在 artifacts/stage4-sample-review-store.json。
+    - 2026-05-02 已用 Mikiya Wagyu Shabu House 真实数据刷新竞品，自动选出的 5 家均为 shabu/hot pot 相关餐厅。
+publish_status:
+  stage5: ready
+  checked_at: "2026-05-02"
+  validation:
+    - agent 文件完整
+    - 技能目录和 SKILL.md 完整
+    - Python 脚本编译通过
+    - JSON schema 解析通过
+    - API mock 单元测试通过
+    - live API 测试入口存在，默认跳过，需 RUN_LIVE_API_TESTS=1 时才调用外部服务
+open_questions:
+  - 初始报告默认拉取最近多少条 Google/Yelp 评论，或是否按最近 3 个月作为目标窗口？
+  - 每日提醒和周报最终通过聊天内消息、邮件，还是其他渠道发送？

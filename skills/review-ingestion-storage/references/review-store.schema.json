@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Better Review Review Store",
+  "type": "object",
+  "required": ["version", "restaurants", "reviews", "new_review_keys", "platform_snapshots", "ingestion_runs", "data_gaps", "last_checked_at"],
+  "properties": {
+    "version": { "type": "string" },
+    "restaurants": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/restaurant" }
+    },
+    "reviews": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/review" }
+    },
+    "new_review_keys": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "platform_snapshots": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/platform_snapshot" }
+    },
+    "ingestion_runs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ingestion_run" }
+    },
+    "data_gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/data_gap" }
+    },
+    "last_checked_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "restaurant": {
+      "type": "object",
+      "required": ["restaurant_key", "role", "name"],
+      "properties": {
+        "restaurant_key": { "type": "string" },
+        "role": { "type": "string", "enum": ["target", "competitor"] },
+        "name": { "type": "string" },
+        "address": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "required": ["review_key", "platform", "restaurant_key", "restaurant_role", "restaurant_name", "first_seen_at", "last_seen_at", "seen_in_run_id", "raw"],
+      "properties": {
+        "review_key": { "type": "string" },
+        "platform": { "type": "string", "enum": ["google", "yelp"] },
+        "restaurant_key": { "type": "string" },
+        "restaurant_role": { "type": "string", "enum": ["target", "competitor"] },
+        "restaurant_name": { "type": "string" },
+        "source_id": { "type": ["string", "null"] },
+        "source_url": { "type": ["string", "null"] },
+        "author": { "type": ["string", "null"] },
+        "rating": { "type": ["number", "null"] },
+        "published_at": { "type": ["string", "null"] },
+        "relative_date": { "type": ["string", "null"] },
+        "text": { "type": ["string", "null"] },
+        "language": { "type": ["string", "null"] },
+        "review_url": { "type": ["string", "null"] },
+        "owner_response": {
+          "oneOf": [
+            { "type": "object" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "first_seen_at": { "type": "string", "format": "date-time" },
+        "last_seen_at": { "type": "string", "format": "date-time" },
+        "seen_in_run_id": { "type": "string" },
+        "raw": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "platform_snapshot": {
+      "type": "object",
+      "required": ["platform", "source_status", "captured_at"],
+      "properties": {
+        "platform": { "type": "string", "enum": ["google", "yelp"] },
+        "source_id": { "type": ["string", "null"] },
+        "source_url": { "type": ["string", "null"] },
+        "source_status": { "type": ["string", "null"] },
+        "confidence": { "type": ["string", "null"] },
+        "rating": { "type": ["number", "null"] },
+        "review_count": { "type": ["integer", "null"] },
+        "business_status": { "type": ["string", "null"] },
+        "captured_at": { "type": "string", "format": "date-time" },
+        "provider_status": { "type": ["string", "null"] },
+        "raw_result_metadata": {
+          "type": ["object", "null"],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ingestion_run": {
+      "type": "object",
+      "required": ["run_id", "mode", "started_at", "finished_at", "providers_attempted", "restaurants_scanned", "reviews_seen", "new_reviews", "max_reviews_per_platform"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "mode": { "type": "string", "enum": ["initial", "daily", "weekly"] },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "providers_attempted": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["google", "yelp"] }
+        },
+        "restaurants_scanned": { "type": "integer", "minimum": 0 },
+        "reviews_seen": { "type": "integer", "minimum": 0 },
+        "new_reviews": { "type": "integer", "minimum": 0 },
+        "max_reviews_per_platform": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "data_gap": {
+      "type": "object",
+      "required": ["platform", "restaurant_key", "restaurant_name", "reason", "retryable", "recorded_at"],
+      "properties": {
+        "platform": { "type": "string", "enum": ["google", "yelp"] },
+        "restaurant_key": { "type": "string" },
+        "restaurant_name": { "type": "string" },
+        "reason": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "recorded_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

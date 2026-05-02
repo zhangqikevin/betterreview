@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Better Review Competitors",
+  "type": "object",
+  "required": ["target", "settings", "suggested_competitors", "approved_competitors", "owner_decisions", "data_gaps", "runtime_diagnostics", "last_checked_at"],
+  "properties": {
+    "target": {
+      "type": "object",
+      "required": ["name", "address"],
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "google_place_id": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "settings": {
+      "type": "object",
+      "required": ["radius_miles", "desired_count", "confirmation_mode"],
+      "properties": {
+        "radius_miles": { "type": "number", "exclusiveMinimum": 0 },
+        "desired_count": { "type": "integer", "minimum": 1 },
+        "category_hint": { "type": ["string", "null"] },
+        "target_profile": {
+          "type": ["object", "null"],
+          "properties": {
+            "category_key": { "type": "string" },
+            "cuisine": { "type": "array", "items": { "type": "string" } },
+            "price_positioning": { "type": ["string", "integer", "null"] },
+            "occasion_positioning": { "type": "string" },
+            "target_customers": { "type": "array", "items": { "type": "string" } },
+            "search_keywords": { "type": "array", "items": { "type": "string" } },
+            "strong_terms": { "type": "array", "items": { "type": "string" } },
+            "adjacent_terms": { "type": "array", "items": { "type": "string" } },
+            "negative_terms": { "type": "array", "items": { "type": "string" } },
+            "evidence": { "type": "object" }
+          },
+          "required": ["category_key", "cuisine", "price_positioning", "occasion_positioning", "target_customers", "search_keywords", "strong_terms", "adjacent_terms", "negative_terms", "evidence"],
+          "additionalProperties": false
+        },
+        "confirmation_mode": { "type": "string", "enum": ["pending", "owner_confirmed", "auto_selected"] }
+      },
+      "additionalProperties": false
+    },
+    "suggested_competitors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/competitor" }
+    },
+    "approved_competitors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/competitor" }
+    },
+    "owner_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "restaurant_name", "note"],
+        "properties": {
+          "action": { "type": "string", "enum": ["approved", "removed", "replaced", "added", "auto_selected"] },
+          "restaurant_name": { "type": "string" },
+          "note": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "data_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["platform", "restaurant_name", "reason", "retryable"],
+        "properties": {
+          "platform": { "type": "string", "enum": ["google", "yelp", "competitor_discovery"] },
+          "restaurant_name": { "type": ["string", "null"] },
+          "reason": { "type": "string" },
+          "retryable": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "runtime_diagnostics": {
+      "type": "object",
+      "properties": {
+        "google_places_key_present": { "type": "boolean" },
+        "serpapi_key_present": { "type": "boolean" }
+      },
+      "required": ["google_places_key_present", "serpapi_key_present"],
+      "additionalProperties": false
+    },
+    "last_checked_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "competitor": {
+      "type": "object",
+      "required": ["rank", "rank_score", "status", "google", "yelp", "distance_miles", "selection_reason"],
+      "properties": {
+        "rank": { "type": "integer", "minimum": 1 },
+        "rank_score": { "type": "number", "minimum": 0 },
+        "status": { "type": "string", "enum": ["suggested", "approved", "removed", "alternate"] },
+        "distance_miles": { "type": ["number", "null"], "minimum": 0 },
+        "selection_reason": { "type": "string" },
+        "google": { "$ref": "#/$defs/platform_source" },
+        "yelp": { "$ref": "#/$defs/platform_source" }
+      },
+      "additionalProperties": false
+    },
+    "platform_source": {
+      "type": "object",
+      "required": ["status", "confidence", "match_score", "raw"],
+      "properties": {
+        "status": { "type": "string", "enum": ["matched", "ambiguous", "missing"] },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low", "missing"] },
+        "match_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "id": { "type": ["string", "null"] },
+        "url": { "type": ["string", "null"] },
+        "name": { "type": ["string", "null"] },
+        "address": { "type": ["string", "null"] },
+        "rating": { "type": ["number", "null"] },
+        "review_count": { "type": ["integer", "null"] },
+        "coordinates": {
+          "type": ["object", "null"],
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          },
+          "required": ["lat", "lng"],
+          "additionalProperties": false
+        },
+        "business_status": { "type": ["string", "null"] },
+        "raw": { "type": "object" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Better Review Source Profile",
+  "type": "object",
+  "required": ["target", "sources", "data_gaps", "last_checked_at"],
+  "properties": {
+    "target": {
+      "type": "object",
+      "required": ["name", "address"],
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": ["string", "null"] },
+        "website": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "object",
+      "required": ["google", "yelp"],
+      "properties": {
+        "google": { "$ref": "#/$defs/platform_source" },
+        "yelp": { "$ref": "#/$defs/platform_source" }
+      },
+      "additionalProperties": false
+    },
+    "data_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["platform", "reason", "retryable"],
+        "properties": {
+          "platform": { "type": "string", "enum": ["google", "yelp"] },
+          "reason": { "type": "string" },
+          "retryable": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "last_checked_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "platform_source": {
+      "type": "object",
+      "required": ["status", "confidence", "match_score", "raw"],
+      "properties": {
+        "status": { "type": "string", "enum": ["matched", "ambiguous", "missing"] },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low", "missing"] },
+        "match_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "id": { "type": ["string", "null"] },
+        "url": { "type": ["string", "null"] },
+        "name": { "type": ["string", "null"] },
+        "address": { "type": ["string", "null"] },
+        "rating": { "type": ["number", "null"] },
+        "review_count": { "type": ["integer", "null"] },
+        "coordinates": {
+          "type": ["object", "null"],
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          },
+          "required": ["lat", "lng"],
+          "additionalProperties": false
+        },
+        "business_status": { "type": ["string", "null"] },
+        "raw": { "type": "object" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.mode
+.agents/
+data/
+artifacts/
+
+# Keep only the current Better Review release archive in version control.
+zip/*
+!zip/better-review-0.1.0.zip
+
+# Local/bootstrap leftovers
+BOOTSTRAP.md
+BOOTSTRAP.md.done

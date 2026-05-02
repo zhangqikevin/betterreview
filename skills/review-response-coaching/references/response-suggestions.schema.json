@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Better Review Response Suggestions",
+  "type": "object",
+  "required": ["version", "suggestion_run_id", "mode", "generated_at", "input_store_last_checked_at", "date_window", "selection", "target_review_suggestions", "competitor_review_signals", "data_gaps", "reuse_notes"],
+  "properties": {
+    "version": { "type": "string" },
+    "suggestion_run_id": { "type": "string" },
+    "mode": { "type": "string", "enum": ["daily", "weekly", "ad-hoc"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "input_store_last_checked_at": { "type": ["string", "null"], "format": "date-time" },
+    "date_window": {
+      "type": ["object", "null"],
+      "properties": {
+        "start": { "type": ["string", "null"] },
+        "end": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "selection": {
+      "type": "object",
+      "required": ["selected_review_count", "target_review_count", "competitor_review_count", "source"],
+      "properties": {
+        "selected_review_count": { "type": "integer", "minimum": 0 },
+        "target_review_count": { "type": "integer", "minimum": 0 },
+        "competitor_review_count": { "type": "integer", "minimum": 0 },
+        "source": { "type": "string", "enum": ["new_review_keys", "date_window", "all_reviews"] }
+      },
+      "additionalProperties": false
+    },
+    "target_review_suggestions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/target_suggestion" }
+    },
+    "competitor_review_signals": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/competitor_signal" }
+    },
+    "data_gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/data_gap" }
+    },
+    "reuse_notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "target_suggestion": {
+      "type": "object",
+      "required": ["review_key", "platform", "restaurant_name", "author", "rating", "published_at", "relative_date", "text_available", "sentiment", "themes", "tone", "confidence", "public_reply_draft", "internal_guidance", "needs_owner_review", "reasoning_notes"],
+      "properties": {
+        "review_key": { "type": "string" },
+        "platform": { "type": "string", "enum": ["google", "yelp"] },
+        "restaurant_name": { "type": "string" },
+        "author": { "type": ["string", "null"] },
+        "rating": { "type": ["number", "null"] },
+        "published_at": { "type": ["string", "null"] },
+        "relative_date": { "type": ["string", "null"] },
+        "text_available": { "type": "boolean" },
+        "sentiment": { "type": "string", "enum": ["positive", "neutral", "negative", "unknown"] },
+        "themes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tone": { "type": "string" },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+        "public_reply_draft": { "type": ["string", "null"] },
+        "internal_guidance": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "needs_owner_review": { "type": "boolean" },
+        "reasoning_notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "competitor_signal": {
+      "type": "object",
+      "required": ["review_key", "platform", "restaurant_name", "rating", "published_at", "relative_date", "text_available", "sentiment", "themes", "signal"],
+      "properties": {
+        "review_key": { "type": "string" },
+        "platform": { "type": "string", "enum": ["google", "yelp"] },
+        "restaurant_name": { "type": "string" },
+        "rating": { "type": ["number", "null"] },
+        "published_at": { "type": ["string", "null"] },
+        "relative_date": { "type": ["string", "null"] },
+        "text_available": { "type": "boolean" },
+        "sentiment": { "type": "string", "enum": ["positive", "neutral", "negative", "unknown"] },
+        "themes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "signal": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "data_gap": {
+      "type": "object",
+      "required": ["platform", "restaurant_key", "restaurant_name", "reason", "retryable", "recorded_at"],
+      "properties": {
+        "platform": { "type": "string", "enum": ["google", "yelp"] },
+        "restaurant_key": { "type": "string" },
+        "restaurant_name": { "type": "string" },
+        "reason": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "recorded_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
